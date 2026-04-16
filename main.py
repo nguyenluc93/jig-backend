@@ -47,3 +47,24 @@ def setup_admin(db: Session = Depends(get_db)):
 @app.get("/")
 def root():
     return {"status": "JIG API running"}
+
+from database import SessionLocal
+import models
+from auth import hash_password
+
+@app.on_event("startup")
+def create_admin_if_not_exists():
+    db = SessionLocal()
+
+    admin = db.query(models.User).filter(models.User.is_admin == True).first()
+
+    if not admin:
+        new_admin = models.User(
+            username="admin",
+            hashed_password=hash_password("admin123"),
+            is_admin=True
+        )
+        db.add(new_admin)
+        db.commit()
+
+    db.close()
